@@ -252,11 +252,12 @@ typedef enum {
 
 typedef struct {
     CFG_CMD command;
-    int params[16];
+    uint32_t params[16];
 } ConfigCommand;
 
 typedef struct {
     char name[256];
+    size_t size;
     ConfigCommand commands[512];
 } ConfigEntry;
 
@@ -270,6 +271,11 @@ void initConfigDatabase(ConfigDatabase *db, size_t size) {
     db->entries = (ConfigEntry *)malloc(size * sizeof(ConfigEntry));
     db->used = 0;
     db->size = size;
+    int i;
+    for (i=0; i<size; i++) {
+        ConfigEntry *e = &db->entries[i];
+        e->size = 0;
+    }
 }
 
 void insertConfigDatabaseEntry(ConfigDatabase *db, ConfigEntry entry) {
@@ -311,20 +317,43 @@ int rng_event_search() {
     rewind(fp);
 
     // add the entries to the database
-    
+
+    printf("Building database...");
     size_t current_entry = -1;
     while(fgets(line, 1024, fp) != NULL) {
         char command[16];
-        char params[128];
+        char params[256];
         sscanf(line, "%s", command);
         if (strcmp("NAME", command) == 0){
             current_entry++;
             sscanf(line, "NAME %[^\n]", params);
             strcpy(db.entries[current_entry].name, params);
         }
+        if (strcmp("DELAY", command) == 0){
+            uint32_t delay = 0;
+            sscanf(line, "DELAY %u", &delay);
+            ConfigEntry *e = &db.entries[current_entry];
+            ConfigCommand *c = &e->commands[e->size];
+            c->command = DELAY;
+            c->params[0] = delay;
+        }
+        if (strcmp("INT", command) == 0) {
+            uint32_t range; 
+            uint32_t lower_bound; // inclusive
+            uint32_t upper_bound; // inclusive
+            sscanf(line, "INT %u %u %u", 
+                &range, &lower_bound, &upper_bound);
+            ConfigEntry *e = &db.entries[current_entry];
+            ConfigCommand *c = &e->commands[e->size];
+            c->command = RAND_INT;
+            c->params[0] = range;
+            c->params[1] = lower_bound;
+            c->params[2] = upper_bound;
+        }
     }
-
     fclose(fp);
+    printf("Built!\n");
+
     return 0;
 }
 
