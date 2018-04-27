@@ -239,6 +239,8 @@ void seed_find() {
             rng_adv(&current_seed);
         }
     }
+    freeMatchArray(&matches);
+    freeArray(&characters);
 }
 
 // look for rng events given the config file
@@ -260,12 +262,20 @@ typedef struct {
 
 typedef struct {
     size_t size;
+    size_t used;
     ConfigEntry *entries;
 } ConfigDatabase;
 
 void initConfigDatabase(ConfigDatabase *db, size_t size) {
     db->entries = (ConfigEntry *)malloc(size * sizeof(ConfigEntry));
+    db->used = 0;
     db->size = size;
+}
+
+void insertConfigDatabaseEntry(ConfigDatabase *db, ConfigEntry entry) {
+    if (db->used == db->size)
+        return; // don't add if there's no space
+    db->entries[db->used++] = entry;
 }
 
 int rng_event_search() {
@@ -293,17 +303,24 @@ int rng_event_search() {
         }
     }
 
+    // create db with the size detected
+
     printf("Detected %u entries!\n", db_size);
     ConfigDatabase db;
     initConfigDatabase(&db, db_size);
-
     rewind(fp);
+
+    // add the entries to the database
+    
+    size_t current_entry = -1;
     while(fgets(line, 1024, fp) != NULL) {
         char command[16];
         char params[128];
         sscanf(line, "%s", command);
         if (strcmp("NAME", command) == 0){
+            current_entry++;
             sscanf(line, "NAME %[^\n]", params);
+            strcpy(db.entries[current_entry].name, params);
         }
     }
 
