@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 
 #define CHAR_SIZE 255
 #define CHARACTERS_NUM 25
@@ -115,7 +116,7 @@ int reverse_character_lookup(char *s) {
 void character_lookup(char *s, size_t size, uint32_t character){
     char *char_string;
     if (character >= CHARACTERS_NUM)
-        strncpy(s, "unknwon", size-1);
+        strncpy(s, "unknown", size-1);
     else strncpy(s, CHARACTERS[character], size-1);
     s[size-1] = '\0';
 }
@@ -240,6 +241,76 @@ void seed_find() {
     }
 }
 
+// look for rng events given the config file
+
+typedef enum {
+    DELAY,
+    RAND_INT
+} CFG_CMD;
+
+typedef struct {
+    CFG_CMD command;
+    int params[16];
+} ConfigCommand;
+
+typedef struct {
+    char name[256];
+    ConfigCommand commands[512];
+} ConfigEntry;
+
+typedef struct {
+    size_t size;
+    ConfigEntry *entries;
+} ConfigDatabase;
+
+void initConfigDatabase(ConfigDatabase *db, size_t size) {
+    db->entries = (ConfigEntry *)malloc(size * sizeof(ConfigEntry));
+    db->size = size;
+}
+
+int rng_event_search() {
+    FILE *fp;
+    printf("Opening manip.cfg...");
+    fp = fopen("manip.cfg","r");
+    if (fp == NULL) {
+        printf("Error!\n");
+        printf("\"manip.cfg\" unable to be opened, errno = %d\n", errno);
+        return 1;
+    }
+    printf("Opened!\n");
+
+    // file reading begin
+
+    char line[1024];
+    size_t db_size = 0;
+
+    while(fgets(line, 1024, fp) != NULL) {
+        char command[16];
+        char params[128];
+        sscanf(line, "%s", command);
+        if (strcmp("NAME", command) == 0){
+            db_size++;
+        }
+    }
+
+    printf("Detected %u entries!\n", db_size);
+    ConfigDatabase db;
+    initConfigDatabase(&db, db_size);
+
+    rewind(fp);
+    while(fgets(line, 1024, fp) != NULL) {
+        char command[16];
+        char params[128];
+        sscanf(line, "%s", command);
+        if (strcmp("NAME", command) == 0){
+            sscanf(line, "NAME %[^\n]", params);
+        }
+    }
+
+    fclose(fp);
+    return 0;
+}
+
 // begin
 
 int main() {
@@ -252,5 +323,5 @@ int main() {
     scanf("%c", &answer);
     if (answer == 'y' || answer == 'Y')
         seed_find();
-
+    rng_event_search();
 }
