@@ -279,9 +279,59 @@ void initConfigDatabase(ConfigDatabase *db, size_t size) {
 }
 
 void insertConfigDatabaseEntry(ConfigDatabase *db, ConfigEntry entry) {
-    if (db->used == db->size)
+    if (db->used >= db->size)
         return; // don't add if there's no space
     db->entries[db->used++] = entry;
+}
+
+void rng_cmd_delay(uint32_t *seed, uint32_t n) {
+    int i;
+    for(i=0; i<n; i++) {
+        rng_adv(seed);
+    }
+}
+
+int rng_cmd_int(uint32_t *seed, uint32_t max_val, uint32_t lower_bound, uint32_t upper_bound) {
+    rng_adv(seed);
+    uint32_t n = rng_int(seed, max_val);
+    if (n >= lower_bound && n <= upper_bound) return 1;
+    return 0;
+}
+
+void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
+    uint32_t i;
+    int j;
+    ConfigCommand *c;
+    uint32_t seed;
+    for(i=0; i<0xFFFFFFFF; i++) {
+        seed = base_seed;
+        // get entry in database
+        int failed = 0;
+        for(j=0; j<e->size; j++) {
+            // get command in entry
+            c = &e->commands[j];
+            int ret;
+            switch(c->command) {
+                case DELAY:
+                    rng_cmd_delay(&seed, c->params[0]);
+                    break;
+                case RAND_INT:
+                    ret = rng_cmd_int(&seed, c->params[0], c->params[1], c->params[2]);
+                    if (ret == 0) {
+                        failed = 1;
+                    }
+                    break;
+                default:
+                    break;
+            }
+            if (failed) break;
+        }
+        if (!failed) {
+            printf("%u iterations away on seed 0x%08X\n", i, base_seed);
+            break;
+        }
+        rng_adv(&base_seed);
+    }
 }
 
 int rng_event_search() {
@@ -333,7 +383,7 @@ int rng_event_search() {
             uint32_t delay = 0;
             sscanf(line, "DELAY %u", &delay);
             ConfigEntry *e = &db.entries[current_entry];
-            ConfigCommand *c = &e->commands[e->size];
+            ConfigCommand *c = &e->commands[e->size++];
             c->command = DELAY;
             c->params[0] = delay;
         }
@@ -344,7 +394,7 @@ int rng_event_search() {
             sscanf(line, "INT %u %u %u", 
                 &range, &lower_bound, &upper_bound);
             ConfigEntry *e = &db.entries[current_entry];
-            ConfigCommand *c = &e->commands[e->size];
+            ConfigCommand *c = &e->commands[e->size++];
             c->command = RAND_INT;
             c->params[0] = range;
             c->params[1] = lower_bound;
@@ -353,6 +403,27 @@ int rng_event_search() {
     }
     fclose(fp);
     printf("Built!\n");
+
+    // read out databse
+
+    int i;
+    for (i=0; i<db.size; i++) {
+        ConfigEntry *e = &db.entries[i];
+        printf("Entry %d: %s\n", i+1, e->name);
+    }
+
+    ConfigEntry *entry;
+    uint32_t entry_num;
+    uint32_t seed;
+
+    printf("Use which entry? (1-%d) -> ", db.size);
+    scanf("%u", &entry_num);
+    entry = &db.entries[entry_num-1];
+    printf("Current seed? 0x");
+    scanf("%08x", &seed);
+    printf("Using entry \"%s\" on seed 0x%08X...\n", entry->name, seed);
+
+    calculate_rng_distance(entry, seed);
 
     return 0;
 }
