@@ -114,86 +114,9 @@ int reverse_character_lookup(char *s) {
 
 void character_lookup(char *s, size_t size, uint32_t character){
     char *char_string;
-    switch(character) {
-        case 0:
-            char_string = "Dr. Mario";
-            break;
-        case 1:
-            char_string = "Mario";
-            break;
-        case 2:
-            char_string = "Luigi";
-            break;
-        case 3:
-            char_string = "Bowser";
-            break;
-        case 4:
-            char_string = "Peach";
-            break;
-        case 5:
-            char_string = "Yoshi";
-            break;
-        case 6:
-            char_string = "DK";
-            break;
-        case 7:
-            char_string = "C. Falcon";
-            break;
-        case 8:
-            char_string = "Ganondorf";
-            break;
-        case 9:
-            char_string = "Falco";
-            break;
-        case 10:
-            char_string = "Fox";
-            break;
-        case 11:
-            char_string = "Ness";
-            break;
-        case 12:
-            char_string = "Ice Climbers";
-            break;
-        case 13:
-            char_string = "Kirby";
-            break;
-        case 14:
-            char_string = "Samus";
-            break;
-        case 15:
-            char_string = "Zelda";
-            break;
-        case 16:
-            char_string = "Link";
-            break;
-        case 17:
-            char_string = "Young Link";
-            break;
-        case 18:
-            char_string = "Pichu";
-            break;
-        case 19:
-            char_string = "Pikachu";
-            break;
-        case 20:
-            char_string = "Jigglypuff";
-            break;
-        case 21:
-            char_string = "Mewtwo";
-            break;
-        case 22:
-            char_string = "Mr. Game & Watch";
-            break;
-        case 23:
-            char_string = "Marth";
-            break;
-        case 24:
-            char_string = "Roy";
-            break;
-        default:
-            char_string = "Unknown ???";
-    }
-    strncpy(s, char_string, size-1);
+    if (character >= CHARACTERS_NUM)
+        strncpy(s, "unknwon", size-1);
+    else strncpy(s, CHARACTERS[character], size-1);
     s[size-1] = '\0';
 }
 
@@ -249,11 +172,17 @@ void seed_find() {
         printf("Character %u -> ", i);
         scanf("%31s", character);
         int character_num = reverse_character_lookup(character);
-        if (character_num < 0)
-            break;
+        if (character_num < 0) {
+            while ((getchar()) != '\n');
+            char input;
+            printf("finished? y/n -> ");
+            scanf("%c", &input);
+            if (input == 'Y' || input == 'y')
+                break;
+            continue;
+        }
         insertArray(&characters, character_num);
         character_lookup(msg, CHAR_SIZE, character_num);
-        printf("#%u: %s\n", i, msg);
         i++;
     }
 
@@ -323,5 +252,5 @@ int main() {
     scanf("%c", &answer);
     if (answer == 'y' || answer == 'Y')
         seed_find();
-    
+
 }
