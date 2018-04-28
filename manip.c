@@ -302,8 +302,8 @@ void rng_cmd_delay(uint32_t *seed, uint32_t n) {
 int rng_cmd_int(uint32_t *seed, uint32_t max_val, uint32_t lower_bound, uint32_t upper_bound) {
     rng_adv(seed);
     uint32_t n = rng_int(seed, max_val);
-    if (n >= lower_bound && n <= upper_bound) return 1;
-    return 0;
+    if (n >= lower_bound && n <= upper_bound) return 0;
+    return 1; // failed
 }
 
 void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
@@ -324,10 +324,7 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
                     rng_cmd_delay(&seed, c->params[0]);
                     break;
                 case RAND_INT:
-                    ret = rng_cmd_int(&seed, c->params[0], c->params[1], c->params[2]);
-                    if (ret == 0) {
-                        failed = 1;
-                    }
+                    failed = rng_cmd_int(&seed, c->params[0], c->params[1], c->params[2]);
                     break;
                 default:
                     break;
