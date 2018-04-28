@@ -148,7 +148,7 @@ void check_sequence(uint32_t seed, uint32_t prev_seed, Match *m, Array *characte
     m->end = seed;
 }
 
-void seed_find() {
+uint32_t seed_find(int quick) {
     uint32_t prev_seed = 0x00000001; // init seed
     uint32_t seed = prev_seed;
     rng_adv(&seed);
@@ -210,6 +210,13 @@ void seed_find() {
             check_sequence(seed, prev_seed, &match, &characters);
             if (match.match) {
                 insertMatchArray(&matches, match);
+                if (quick) {
+                    printf("Scanning: 0x%08X -> 0x%08X ... %u matches%s\n", 
+                        i, seed, matches.used, (matches.used > 0) ? "!" : ".");
+                    freeMatchArray(&matches);
+                    freeArray(&characters);
+                    return match.end;
+                }
             }
         }
         if (!(i % 0x1234517))
@@ -241,6 +248,7 @@ void seed_find() {
     }
     freeMatchArray(&matches);
     freeArray(&characters);
+    return 0;
 }
 
 // look for rng events given the config file
@@ -334,7 +342,7 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
     }
 }
 
-int rng_event_search() {
+int rng_event_search(uint32_t seed, int quick) {
     FILE *fp;
     printf("Opening manip.cfg...");
     fp = fopen("manip.cfg","r");
@@ -414,13 +422,15 @@ int rng_event_search() {
 
     ConfigEntry *entry;
     uint32_t entry_num;
-    uint32_t seed;
 
     printf("Use which entry? (1-%d) -> ", db.size);
     scanf("%u", &entry_num);
     entry = &db.entries[entry_num-1];
-    printf("Current seed? 0x");
-    scanf("%08x", &seed);
+    if (!quick) {
+        printf("Current seed? 0x");
+        scanf("%08x", &seed);
+    }
+
     printf("Using entry \"%s\" on seed 0x%08X...\n", entry->name, seed);
 
     calculate_rng_distance(entry, seed);
@@ -438,7 +448,14 @@ int main() {
     char answer;
     printf("Locate seed? y/n -> ");
     scanf("%c", &answer);
-    if (answer == 'y' || answer == 'Y')
-        seed_find();
-    rng_event_search();
+    uint32_t seed;
+    int quick = 0;
+    if (answer == 'y' || answer == 'Y') {
+        while ((getchar()) != '\n');
+        printf("Return after 1st result? y/n -> ");
+        scanf("%c", &answer);
+        if (answer == 'y' || answer == 'Y') quick = 1;
+        seed = seed_find(quick);
+    }
+    rng_event_search(seed, quick);
 }
