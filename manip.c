@@ -76,7 +76,7 @@ void freeMatchArray(MatchArray *a) {
 
 
 // ----------------------------------------------------------------------
-static const char *CHARACTERS[CHARACTERS_NUM] = {
+static const char* CHARACTERS[CHARACTERS_NUM] = {
     "drmario",
     "mario",
     "luigi",
@@ -102,6 +102,14 @@ static const char *CHARACTERS[CHARACTERS_NUM] = {
     "gnw",
     "marth",
     "roy"
+};
+
+static uint8_t ALLSTAR_TABLE[24] = {
+    0xB1, 0xB2, 0xB3, 0xB4, 0xB5,
+    0xB6, 0xB7, 0xB8, 0xB9, 0xBA,
+    0xBB, 0xBC, 0xBD, 0xBE, 0xBF,
+    0xC0, 0xC1, 0xC2, 0xC3, 0xC4,
+    0xC5, 0xC6, 0xC7, 0xC9 //, 0xC8 (never changes spot) 
 };
 
 int reverse_character_lookup(char *s) {
@@ -255,12 +263,13 @@ uint32_t seed_find(int quick) {
 
 typedef enum {
     DELAY,
-    RAND_INT
+    RAND_INT,
+    ALLSTAR
 } CFG_CMD;
 
 typedef struct {
     CFG_CMD command;
-    uint32_t params[16];
+    uint32_t params[32];
 } ConfigCommand;
 
 typedef struct {
@@ -274,6 +283,10 @@ typedef struct {
     size_t used;
     ConfigEntry *entries;
 } ConfigDatabase;
+
+typedef struct {
+    uint32_t bitmasks[24];
+} AllstarBitmask;
 
 void initConfigDatabase(ConfigDatabase *db, size_t size) {
     db->entries = (ConfigEntry *)malloc(size * sizeof(ConfigEntry));
@@ -306,6 +319,57 @@ int rng_cmd_int(uint32_t *seed, uint32_t max_val, uint32_t lower_bound, uint32_t
     return 1; // failed
 }
 
+/*  EACH PARAM IS A MASK
+    | bit | id   | name
+    |-----|------|---------------------------------------
+    |   0 | 0xB1 | Rainbow Cruise (vs Mario)
+    |   1 | 0xB2 | Kongo Jungle (vs Donkey Kong)
+    |   2 | 0xB3 | Great Bay (vs Link)
+    |   3 | 0xB4 | Brinstar (vs Samus)
+    |   4 | 0xB5 | Yoshi's Story (vs Yoshi)
+    |   5 | 0xB6 | Green Greens (vs Kirby)
+    |   6 | 0xB7 | Corneria (vs Fox)
+    |   7 | 0xB8 | Pokémon Stadium (vs Pikachu)
+    |   8 | 0xB9 | Mushroom Kingdom I (vs Luigi)
+    |   9 | 0xBA | Mute City (vs Captain Falcon)
+    |  10 | 0xBB | Onett (vs Ness)
+    |  11 | 0xBC | Poké Floats (vs Jigglypuff)
+    |  12 | 0xBD | Icicle Mountain (vs Ice Climbers)
+    |  13 | 0xBE | Princess Peach's Castle (vs Peach)
+    |  14 | 0xBF | Temple (vs Zelda)
+    |  15 | 0xC0 | Fountain of Dreams (Emblem Music) (vs Marth)
+    |  16 | 0xC1 | Battlefield (Poké Floats song) (vs Mewtwo)
+    |  17 | 0xC2 | Yoshi's Island (vs Bowser)
+    |  18 | 0xC3 | Mushroom Kingdom II (Dr Mario Music) (vs Dr Mario)
+    |  19 | 0xC4 | Jungle Japes (vs Young Link)
+    |  20 | 0xC5 | Venom (vs Falco)
+    |  21 | 0xC6 | Fourside (vs Pichu)
+    |  22 | 0xC7 | Final Destination (Emblem Music) (vs Roy)
+    |  23 | 0xC8 | Flat Zone (vs Team Game & Watch)
+    |  ^^^^^^^^^^^^^^^^ (if you set this bit, you are incorrect)
+    |  24 | 0xC9 | Brinstar Depths (vs Ganondorf)
+    |----------------------------------------------------
+*/
+// each param is a bitmask of acceptable stages
+
+int rng_allstar(uint32_t *seed, AllstarBitmask *abm) {
+    uint8_t allstar_table[24];
+    for(int i=0; i<24; i++) { allstar_table[i] = ALLSTAR_TABLE[i]; }
+    for(int i=0; i<23; i++) {
+        rng_adv(seed);
+        uint32_t offset = rng_int(seed, 24-i);
+        // swap
+        uint8_t tmp = allstar_table[i];
+        allstar_table[i] = allstar_table[i+offset];
+        allstar_table[i+offset] = tmp;
+
+    }
+    for (int i=0; i<24; i++) {
+        printf("%d\n", allstar_table[i]);
+    }
+    return 1; // failed
+}
+
 void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
     uint32_t i;
     int j;
@@ -319,12 +383,17 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
             // get command in entry
             c = &e->commands[j];
             int ret;
+            AllstarBitmask abm;
             switch(c->command) {
                 case DELAY:
                     rng_cmd_delay(&seed, c->params[0]);
                     break;
                 case RAND_INT:
                     failed = rng_cmd_int(&seed, c->params[0], c->params[1], c->params[2]);
+                    break;
+                case ALLSTAR:
+                    for (int k=0; k<24; k++) { abm.bitmasks[k] = c->params[k]; }
+                    failed = rng_allstar(&seed, &abm);
                     break;
                 default:
                     break;
@@ -404,6 +473,19 @@ int rng_event_search(uint32_t seed, int quick) {
             c->params[0] = range;
             c->params[1] = lower_bound;
             c->params[2] = upper_bound;
+        }
+        if (strcmp("ALLSTAR", command) == 0) {
+            uint32_t bitmasks[24];
+            sscanf(line, "ALLSTAR %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u",
+                &bitmasks[0], &bitmasks[1], &bitmasks[2], &bitmasks[3], &bitmasks[4], 
+                &bitmasks[5], &bitmasks[6], &bitmasks[7], &bitmasks[8], &bitmasks[9], 
+                &bitmasks[10], &bitmasks[11], &bitmasks[12], &bitmasks[13], &bitmasks[14], 
+                &bitmasks[15], &bitmasks[16], &bitmasks[17], &bitmasks[18], &bitmasks[19], 
+                &bitmasks[20], &bitmasks[21], &bitmasks[22], &bitmasks[23]);
+            ConfigEntry *e = &db.entries[current_entry];
+            ConfigCommand *c = &e->commands[e->size++];
+            c->command = ALLSTAR;
+            for (int i=0; i<24; i++) { c->params[i] = bitmasks[i]; }
         }
     }
     fclose(fp);
