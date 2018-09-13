@@ -76,6 +76,64 @@ void freeMatchArray(MatchArray *a) {
 
 
 // ----------------------------------------------------------------------
+
+// index = event_id - 0xb1
+static const char* ALLSTAR_EVENT_STRINGS[25] = {
+    "Rainbow Cruise (vs Mario)", // 0xB1
+    "Kongo Jungle (vs Donkey Kong)",
+    "Great Bay (vs Link)",
+    "Brinstar (vs Samus)",
+    "Yoshi's Story (vs Yoshi)",
+    "Green Greens (vs Kirby)",
+    "Corneria (vs Fox)",
+    "Pokémon Stadium (vs Pikachu)",
+    "Mushroom Kingdom I (vs Luigi)",
+    "Mute City (vs Captain Falcon)",
+    "Onett (vs Ness)",
+    "Poké Floats (vs Jigglypuff)",
+    "Icicle Mountain (vs Ice Climbers)",
+    "Princess Peach's Castle (vs Peach)",
+    "Temple (vs Zelda)",
+    "Fountain of Dreams (Emblem Music) (vs Marth)",
+    "Battlefield (Poké Floats song) (vs Mewtwo)",
+    "Yoshi's Island (vs Bowser)",
+    "Mushroom Kingdom II (Dr Mario Music) (vs Dr Mario)",
+    "Jungle Japes (vs Young Link)",
+    "Venom (vs Falco)",
+    "Fourside (vs Pichu)",
+    "Final Destination (Emblem Music) (vs Roy)",
+    "Flat Zone (vs Team Game & Watch)",
+    "Brinstar Depths (vs Ganondorf)" // 0xC9
+};
+
+static const char* ALLSTAR_CHAR_STRINGS[25] = {
+    "Mario",
+    "Donkey Kong",
+    "Link",
+    "Samus",
+    "Yoshi",
+    "Kirby",
+    "Fox",
+    "Pikachu",
+    "Luigi",
+    "Captain Falcon",
+    "Ness",
+    "Jigglypuff",
+    "Ice Climbers",
+    "Peach",
+    "Zelda",
+    "Marth",
+    "Mewtwo",
+    "Bowser",
+    "Dr Mario",
+    "Young Link",
+    "Falco",
+    "Pichu",
+    "Roy",
+    "Team Game & Watch",
+    "Ganondorf"
+};
+
 static const char* CHARACTERS[CHARACTERS_NUM] = {
     "drmario",
     "mario",
@@ -105,6 +163,14 @@ static const char* CHARACTERS[CHARACTERS_NUM] = {
 };
 
 static uint8_t ALLSTAR_TABLE[24] = {
+    0xB1, 0xB2, 0xB3, 0xB4, 0xB5,
+    0xB6, 0xB7, 0xB8, 0xB9, 0xBA,
+    0xBB, 0xBC, 0xBD, 0xBE, 0xBF,
+    0xC0, 0xC1, 0xC2, 0xC3, 0xC4,
+    0xC5, 0xC6, 0xC7, 0xC9 //, 0xC8 (never changes spot) 
+};
+
+static uint8_t ALLSTAR_TABLE_TEMP[24] = {
     0xB1, 0xB2, 0xB3, 0xB4, 0xB5,
     0xB6, 0xB7, 0xB8, 0xB9, 0xBA,
     0xBB, 0xBC, 0xBD, 0xBE, 0xBF,
@@ -156,8 +222,7 @@ void check_sequence(uint32_t seed, uint32_t prev_seed, Match *m, Array *characte
     m->end = seed;
 }
 
-uint32_t seed_find(int quick) {
-    uint32_t prev_seed = 0x00000001; // init seed
+uint32_t seed_find(int quick, uint32_t prev_seed) {
     uint32_t seed = prev_seed;
     rng_adv(&seed);
     char msg[CHAR_SIZE]; // loop messages
@@ -349,30 +414,40 @@ int rng_cmd_int(uint32_t *seed, uint32_t max_val, uint32_t lower_bound, uint32_t
     |  ^^^^^^^^^^^^^^^^ (if you set this bit, you are incorrect)
     |  24 | 0xC9 | Brinstar Depths (vs Ganondorf)
     |----------------------------------------------------
+    | 0000 0000 0000 0110 0000 0100 0010 0000
 */
 // each param is a bitmask of acceptable stages
 
+uint32_t passes_bitmask(uint32_t *bitmask, uint8_t *allstar_event) {
+    uint32_t shifted_event = *allstar_event - 0xB1;
+    shifted_event = 1 << shifted_event;
+    return (shifted_event & *bitmask);
+}
+
 int rng_allstar(uint32_t *seed, AllstarBitmask *abm) {
-    uint8_t allstar_table[24];
-    for(int i=0; i<24; i++) { allstar_table[i] = ALLSTAR_TABLE[i]; }
+    for (int i=0; i<24; i++) { ALLSTAR_TABLE_TEMP[i] = ALLSTAR_TABLE[i]; }
     for(int i=0; i<23; i++) {
         rng_adv(seed);
         uint32_t offset = rng_int(seed, 24-i);
         // swap
-        uint8_t tmp = allstar_table[i];
-        allstar_table[i] = allstar_table[i+offset];
-        allstar_table[i+offset] = tmp;
-
+        uint8_t tmp = ALLSTAR_TABLE_TEMP[i];
+        ALLSTAR_TABLE_TEMP[i] = ALLSTAR_TABLE_TEMP[i+offset];
+        ALLSTAR_TABLE_TEMP[i+offset] = tmp;
+    }
+    for(int i=0; i<24; i++) {
+        if (passes_bitmask(&abm->bitmasks[i],&ALLSTAR_TABLE_TEMP[i]) == 0)
+            return 1; // failed
     }
     for (int i=0; i<24; i++) {
-        printf("%d\n", allstar_table[i]);
+        printf("%d - %s\n", ALLSTAR_TABLE_TEMP[i], ALLSTAR_EVENT_STRINGS[ALLSTAR_TABLE_TEMP[i]-0xB1]);
     }
-    return 1; // failed
+    return 0; 
 }
 
 void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
     uint32_t i;
     int j;
+    uint8_t was_allstar = 0;
     ConfigCommand *c;
     uint32_t seed;
     for(i=0; i<0xFFFFFFFF; i++) {
@@ -394,6 +469,7 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
                 case ALLSTAR:
                     for (int k=0; k<24; k++) { abm.bitmasks[k] = c->params[k]; }
                     failed = rng_allstar(&seed, &abm);
+                    was_allstar = 1;
                     break;
                 default:
                     break;
@@ -405,6 +481,15 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
             break;
         }
         rng_adv(&base_seed);
+    }
+    if (was_allstar) {
+        while ((getchar()) != '\n');
+        char answer;
+        printf("Confirm use of new table? y/n -> ");
+        scanf("%c", &answer);
+        if (answer == 'y' || answer == 'Y') {
+            for (int i=0; i<24; i++) { ALLSTAR_TABLE[i] = ALLSTAR_TABLE_TEMP[i]; }
+        }
     }
 }
 
@@ -502,6 +587,7 @@ int rng_event_search(uint32_t seed, int quick) {
     ConfigEntry *entry;
     uint32_t entry_num;
 
+    while ((getchar()) != '\n');
     printf("Use which entry? (1-%d) -> ", db.size);
     scanf("%u", &entry_num);
     entry = &db.entries[entry_num-1];
@@ -524,17 +610,61 @@ int main() {
     printf("SSBM RNG Seed Character Checking Program\n");
     printf("Written in C by Savestate\n");
     printf("----------------------------------------\n");
-    char answer;
-    printf("Locate seed? y/n -> ");
-    scanf("%c", &answer);
-    uint32_t seed;
-    int quick = 0;
-    if (answer == 'y' || answer == 'Y') {
-        while ((getchar()) != '\n');
-        printf("Return after 1st result? y/n -> ");
-        scanf("%c", &answer);
-        if (answer == 'y' || answer == 'Y') quick = 1;
-        seed = seed_find(quick);
+
+    char allstar_order;
+    printf("Set current all-star order?\n");
+    printf("this is slow and annoying; just restart the console.\n y/n -> ");
+    scanf("%c", &allstar_order);
+
+    if (allstar_order == 'Y' || allstar_order == 'y') {
+        for (int i=0; i<25; i++) {
+            printf("%d = %s\n", i, ALLSTAR_CHAR_STRINGS[i]);
+        }
+        printf("!!! do NOT set flatzone btw !!!\n");
+        for (int i=0; i<24; i++) {
+            printf("slot %d: ", i);
+            uint8_t number; 
+            scanf("%u", &number);
+            number += 0xB1;
+            ALLSTAR_TABLE[i] = number;
+        }
+        printf(" :: NEW TABLE :: \n");
+        for (int i=0; i<24; i++) {
+            printf("%d = %s\n", i, ALLSTAR_CHAR_STRINGS[ALLSTAR_TABLE[i]-0xB1]);
+        }
     }
-    rng_event_search(seed, quick);
+
+    uint32_t last_seed = 0x00000001;
+    uint8_t first_run = 0;
+
+    while (1) {
+        while ((getchar()) != '\n');
+        char answer;
+        if (first_run != 0) {
+            printf("Last seed: 0x%08x\n", last_seed);
+        }
+        printf("Locate seed? [y]es / [n]o / [l]ast / e[x]it -> ");
+        scanf("%c", &answer);
+        uint32_t seed;
+        int quick = 0;
+        if (answer == 'x' || answer == 'X') { break; }
+        if (answer == 'y' || answer == 'Y') {
+            while ((getchar()) != '\n');
+            printf("Return after 1st result? y/n -> ");
+            scanf("%c", &answer);
+            if (answer == 'y' || answer == 'Y') quick = 1;
+            seed = seed_find(quick, 0x00000001);
+            last_seed = seed;
+        }
+        if (answer == 'l' || answer == 'L') {
+            while ((getchar()) != '\n');
+            printf("Return after 1st result? y/n -> ");
+            scanf("%c", &answer);
+            if (answer == 'y' || answer == 'Y') quick = 1;
+            seed = seed_find(quick, last_seed);
+            last_seed = seed;
+        }
+        rng_event_search(seed, quick);
+        first_run = 1;
+    }
 }
