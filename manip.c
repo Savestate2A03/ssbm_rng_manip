@@ -478,6 +478,7 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
         }
         if (!failed) {
             printf("%u iterations away on seed 0x%08X\n", i, base_seed);
+            printf("open cpu window for %.2f seconds\n", ((float)i/4833.9));
             break;
         }
         rng_adv(&base_seed);
@@ -570,7 +571,9 @@ int rng_event_search(uint32_t seed, int quick) {
             ConfigEntry *e = &db.entries[current_entry];
             ConfigCommand *c = &e->commands[e->size++];
             c->command = ALLSTAR;
-            for (int i=0; i<24; i++) { c->params[i] = bitmasks[i]; }
+            for (int i=0; i<24; i++) { 
+                c->params[i] = bitmasks[i]; 
+            }
         }
     }
     fclose(fp);
