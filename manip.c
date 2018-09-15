@@ -135,30 +135,30 @@ static const char* ALLSTAR_CHAR_STRINGS[25] = {
 };
 
 static const char* CHARACTERS[CHARACTERS_NUM] = {
-    "drmario",
-    "mario",
-    "luigi",
-    "bowser",
-    "peach",
-    "yoshi",
+    "doc",
+    "mro",
+    "lui",
+    "bow",
+    "pea",
+    "yos",
     "dk",
-    "cfalcon",
-    "ganondorf",
-    "falco",
+    "cfa",
+    "gan",
+    "fal",
     "fox",
     "ness",
     "ics",
-    "kirby",
-    "samus",
-    "zelda",
-    "link",
-    "ylink",
-    "pichu",
-    "pikachu",
-    "jigglypuff",
-    "mewtwo",
+    "kir",
+    "sam",
+    "zel",
+    "lin",
+    "yli",
+    "pic",
+    "pik",
+    "puff",
+    "mew",
     "gnw",
-    "marth",
+    "mth",
     "roy"
 };
 
@@ -649,21 +649,13 @@ int main() {
         printf("Locate seed? [y]es / [n]o / [l]ast / e[x]it -> ");
         scanf("%c", &answer);
         uint32_t seed;
-        int quick = 0;
+        int quick = 1;
         if (answer == 'x' || answer == 'X') { break; }
         if (answer == 'y' || answer == 'Y') {
-            while ((getchar()) != '\n');
-            printf("Return after 1st result? y/n -> ");
-            scanf("%c", &answer);
-            if (answer == 'y' || answer == 'Y') quick = 1;
             seed = seed_find(quick, 0x00000001);
             last_seed = seed;
         }
         if (answer == 'l' || answer == 'L') {
-            while ((getchar()) != '\n');
-            printf("Return after 1st result? y/n -> ");
-            scanf("%c", &answer);
-            if (answer == 'y' || answer == 'Y') quick = 1;
             seed = seed_find(quick, last_seed);
             last_seed = seed;
         }
