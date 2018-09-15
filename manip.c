@@ -396,7 +396,7 @@ uint32_t passes_bitmask(uint32_t *bitmask, uint8_t *allstar_event) {
     return (shifted_event & *bitmask);
 }
 
-void update_allstar_table(uint32_t *seed, uint8_t *allstar_table) {
+void activate_allstar(uint32_t *seed, uint8_t *allstar_table) {
     rng_cmd_delay(seed, 25);
     for(int i=0; i<23; i++) {
         rng_adv(seed);
@@ -409,7 +409,7 @@ void update_allstar_table(uint32_t *seed, uint8_t *allstar_table) {
 
 int rng_allstar(uint32_t *seed, AllstarBitmask *abm) {
     for(int i=0; i<24; i++) { ALLSTAR_TABLE_TEMP[i] = ALLSTAR_TABLE[i]; }
-    update_allstar_table(seed, ALLSTAR_TABLE_TEMP);
+    activate_allstar(seed, ALLSTAR_TABLE_TEMP);
     for(int i=0; i<24; i++) {
         if (passes_bitmask(&abm->bitmasks[i],&ALLSTAR_TABLE_TEMP[i]) == 0)
             return 1; // failed
@@ -423,6 +423,7 @@ int rng_allstar(uint32_t *seed, AllstarBitmask *abm) {
 void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
     uint32_t i;
     uint32_t delay = -1;
+    uint32_t reroll = -1;
     int j;
     uint8_t was_allstar = 0;
     ConfigCommand *c;
@@ -438,6 +439,7 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
             int ret;
             AllstarBitmask abm;
             uint32_t temp_seed;
+            uint32_t pre_delay_seed;
             uint8_t backup_allstar_table[24];
             switch(c->command) {
                 case DELAY:
@@ -447,25 +449,24 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
                     failed = rng_cmd_int(&seed, c->params[0], c->params[1], c->params[2]);
                     break;
                 case ALLSTAR:
-                    for(int k=0; k<24; k++) { abm.bitmasks[k] = c->params[k]; }
-                    temp_seed = seed;
-                    failed = rng_allstar(&temp_seed, &abm);
-                    if (!failed)  { break; }
-                    if (i < 16000) { break; }
-                    for(int k=0; k<24; k++) { backup_allstar_table[k] = ALLSTAR_TABLE[k]; }
-                    for(delay=0; delay<40; delay++) {
+                    for (int k=0; k<24; k++) { abm.bitmasks[k] = c->params[k]; }
+                    for (reroll=0; reroll<6; reroll++) {
                         temp_seed = seed;
-                        rng_cmd_delay(&temp_seed, delay);
-                        update_allstar_table(&temp_seed, ALLSTAR_TABLE);
-                        failed = rng_allstar(&temp_seed, &abm);
-                        if (!failed) { 
-                            break; 
+                        for (int k=0; k<24; k++) { backup_allstar_table[k] = ALLSTAR_TABLE[k]; }
+                        for (int k=0; k<reroll; k++) {
+                            activate_allstar(&temp_seed, ALLSTAR_TABLE);
                         }
+                        pre_delay_seed = temp_seed;
+                        for (delay=0; delay<50; delay++) {
+                            rng_cmd_delay(&temp_seed, delay);
+                            failed = rng_allstar(&temp_seed, &abm);
+                            if (!failed || reroll == 0) { break; }
+                            temp_seed = pre_delay_seed;
+                        }
+                        for (int k=0; k<24; k++) { ALLSTAR_TABLE[k] = backup_allstar_table[k]; }
+                        if (!failed) { break; }
                     }
                     was_allstar = 1;
-                    if (failed) {
-                        for(int k=0; k<24; k++) { ALLSTAR_TABLE[k] = backup_allstar_table[k]; }
-                    }
                     break;
                 default:
                     break;
@@ -475,6 +476,7 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
         if (!failed) {
             printf("%u iterations away on seed 0x%08X\n", i, base_seed);
             if (was_allstar) {
+                printf("reroll count: %d\n", reroll);
                 printf("delay count: %d\n", delay);
             }
             printf("open cpu window for %.2f seconds\n", ((float)i/4833.9));
@@ -489,13 +491,6 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
         scanf("%c", &answer);
         if (answer == 'y' || answer == 'Y') {
             for (int i=0; i<24; i++) { ALLSTAR_TABLE[i] = ALLSTAR_TABLE_TEMP[i]; }
-        } else {
-            while ((getchar()) != '\n');
-            printf("Reroll table using current seed? y/n -> ");
-            scanf("%c", &answer);
-            if (answer == 'y' || answer == 'Y') {
-                update_allstar_table(&orig_seed, ALLSTAR_TABLE);
-            }
         }
     }
 }
