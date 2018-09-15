@@ -106,34 +106,6 @@ static const char* ALLSTAR_EVENT_STRINGS[25] = {
     "Brinstar Depths (vs Ganondorf)" // 0xC9
 };
 
-static const char* ALLSTAR_CHAR_STRINGS[25] = {
-    "Mario",
-    "Donkey Kong",
-    "Link",
-    "Samus",
-    "Yoshi",
-    "Kirby",
-    "Fox",
-    "Pikachu",
-    "Luigi",
-    "Captain Falcon",
-    "Ness",
-    "Jigglypuff",
-    "Ice Climbers",
-    "Peach",
-    "Zelda",
-    "Marth",
-    "Mewtwo",
-    "Bowser",
-    "Dr Mario",
-    "Young Link",
-    "Falco",
-    "Pichu",
-    "Roy",
-    "Team Game & Watch",
-    "Ganondorf"
-};
-
 static const char* CHARACTERS[CHARACTERS_NUM] = {
     "doc",
     "mro",
@@ -146,7 +118,7 @@ static const char* CHARACTERS[CHARACTERS_NUM] = {
     "gan",
     "fal",
     "fox",
-    "ness",
+    "nes",
     "ics",
     "kir",
     "sam",
@@ -155,10 +127,10 @@ static const char* CHARACTERS[CHARACTERS_NUM] = {
     "yli",
     "pic",
     "pik",
-    "puff",
+    "jig",
     "mew",
     "gnw",
-    "mth",
+    "mrt",
     "roy"
 };
 
@@ -424,16 +396,20 @@ uint32_t passes_bitmask(uint32_t *bitmask, uint8_t *allstar_event) {
     return (shifted_event & *bitmask);
 }
 
-int rng_allstar(uint32_t *seed, AllstarBitmask *abm) {
-    for (int i=0; i<24; i++) { ALLSTAR_TABLE_TEMP[i] = ALLSTAR_TABLE[i]; }
+void update_allstar_table(uint32_t *seed, uint8_t *allstar_table) {
+    rng_cmd_delay(seed, 25);
     for(int i=0; i<23; i++) {
         rng_adv(seed);
         uint32_t offset = rng_int(seed, 24-i);
-        // swap
-        uint8_t tmp = ALLSTAR_TABLE_TEMP[i];
-        ALLSTAR_TABLE_TEMP[i] = ALLSTAR_TABLE_TEMP[i+offset];
-        ALLSTAR_TABLE_TEMP[i+offset] = tmp;
+        uint8_t tmp = allstar_table[i];
+        allstar_table[i] = allstar_table[i+offset];
+        allstar_table[i+offset] = tmp;
     }
+}
+
+int rng_allstar(uint32_t *seed, AllstarBitmask *abm) {
+    for(int i=0; i<24; i++) { ALLSTAR_TABLE_TEMP[i] = ALLSTAR_TABLE[i]; }
+    update_allstar_table(seed, ALLSTAR_TABLE_TEMP);
     for(int i=0; i<24; i++) {
         if (passes_bitmask(&abm->bitmasks[i],&ALLSTAR_TABLE_TEMP[i]) == 0)
             return 1; // failed
@@ -446,9 +422,11 @@ int rng_allstar(uint32_t *seed, AllstarBitmask *abm) {
 
 void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
     uint32_t i;
+    uint32_t delay = -1;
     int j;
     uint8_t was_allstar = 0;
     ConfigCommand *c;
+    uint32_t orig_seed = base_seed;
     uint32_t seed;
     for(i=0; i<0xFFFFFFFF; i++) {
         seed = base_seed;
@@ -459,6 +437,8 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
             c = &e->commands[j];
             int ret;
             AllstarBitmask abm;
+            uint32_t temp_seed;
+            uint8_t backup_allstar_table[24];
             switch(c->command) {
                 case DELAY:
                     rng_cmd_delay(&seed, c->params[0]);
@@ -467,9 +447,25 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
                     failed = rng_cmd_int(&seed, c->params[0], c->params[1], c->params[2]);
                     break;
                 case ALLSTAR:
-                    for (int k=0; k<24; k++) { abm.bitmasks[k] = c->params[k]; }
-                    failed = rng_allstar(&seed, &abm);
+                    for(int k=0; k<24; k++) { abm.bitmasks[k] = c->params[k]; }
+                    temp_seed = seed;
+                    failed = rng_allstar(&temp_seed, &abm);
+                    if (!failed)  { break; }
+                    if (i < 1000) { break; }
+                    for(int k=0; k<24; k++) { backup_allstar_table[k] = ALLSTAR_TABLE[k]; }
+                    for(delay=0; delay<40; delay++) {
+                        temp_seed = seed;
+                        rng_cmd_delay(&temp_seed, delay);
+                        update_allstar_table(&temp_seed, ALLSTAR_TABLE);
+                        failed = rng_allstar(&temp_seed, &abm);
+                        if (!failed) { 
+                            break; 
+                        }
+                    }
                     was_allstar = 1;
+                    if (failed) {
+                        for(int k=0; k<24; k++) { ALLSTAR_TABLE[k] = backup_allstar_table[k]; }
+                    }
                     break;
                 default:
                     break;
@@ -478,6 +474,9 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
         }
         if (!failed) {
             printf("%u iterations away on seed 0x%08X\n", i, base_seed);
+            if (was_allstar) {
+                printf("delay count: %d\n", delay);
+            }
             printf("open cpu window for %.2f seconds\n", ((float)i/4833.9));
             break;
         }
@@ -490,6 +489,13 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
         scanf("%c", &answer);
         if (answer == 'y' || answer == 'Y') {
             for (int i=0; i<24; i++) { ALLSTAR_TABLE[i] = ALLSTAR_TABLE_TEMP[i]; }
+        } else {
+            while ((getchar()) != '\n');
+            printf("Reroll table using current seed? y/n -> ");
+            scanf("%c", &answer);
+            if (answer == 'y' || answer == 'Y') {
+                update_allstar_table(&orig_seed, ALLSTAR_TABLE);
+            }
         }
     }
 }
@@ -614,31 +620,10 @@ int main() {
     printf("Written in C by Savestate\n");
     printf("----------------------------------------\n");
 
-    char allstar_order;
-    printf("Set current all-star order?\n");
-    printf("this is slow and annoying; just restart the console.\n y/n -> ");
-    scanf("%c", &allstar_order);
-
-    if (allstar_order == 'Y' || allstar_order == 'y') {
-        for (int i=0; i<25; i++) {
-            printf("%d = %s\n", i, ALLSTAR_CHAR_STRINGS[i]);
-        }
-        printf("!!! do NOT set flatzone btw !!!\n");
-        for (int i=0; i<24; i++) {
-            printf("slot %d: ", i);
-            uint8_t number; 
-            scanf("%u", &number);
-            number += 0xB1;
-            ALLSTAR_TABLE[i] = number;
-        }
-        printf(" :: NEW TABLE :: \n");
-        for (int i=0; i<24; i++) {
-            printf("%d = %s\n", i, ALLSTAR_CHAR_STRINGS[ALLSTAR_TABLE[i]-0xB1]);
-        }
-    }
-
     uint32_t last_seed = 0x00000001;
     uint8_t first_run = 0;
+
+    printf("Press enter to start!\n");
 
     while (1) {
         while ((getchar()) != '\n');
