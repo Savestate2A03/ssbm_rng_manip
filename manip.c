@@ -451,7 +451,7 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
                     temp_seed = seed;
                     failed = rng_allstar(&temp_seed, &abm);
                     if (!failed)  { break; }
-                    if (i < 1000) { break; }
+                    if (i < 16000) { break; }
                     for(int k=0; k<24; k++) { backup_allstar_table[k] = ALLSTAR_TABLE[k]; }
                     for(delay=0; delay<40; delay++) {
                         temp_seed = seed;
