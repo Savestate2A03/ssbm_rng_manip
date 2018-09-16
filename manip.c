@@ -450,7 +450,7 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
                     break;
                 case ALLSTAR:
                     for (int k=0; k<24; k++) { abm.bitmasks[k] = c->params[k]; }
-                    for (reroll=0; reroll<6; reroll++) {
+                    for (reroll=0; reroll<8; reroll++) {
                         temp_seed = seed;
                         for (int k=0; k<24; k++) { backup_allstar_table[k] = ALLSTAR_TABLE[k]; }
                         for (int k=0; k<reroll; k++) {
