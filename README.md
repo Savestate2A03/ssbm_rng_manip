@@ -21,7 +21,7 @@ so the program inits its list to it as well. when you restart the program, you h
 6. if you waited longer than 5 seconds or so, do 5 characters, otherwise 4 if less
 7. continue this process until you are a few hundred iterations away.
 8. random characters on the CSS to advance your rng two iterations, random a tag to advance it once. 
-9. go into and out of allstar X times 
+9. go into and out of allstar `reroll` times 
 10. advance the rng by `delay` amount of times.
 
 go into allstar and there u go. 
