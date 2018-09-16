@@ -3,22 +3,26 @@ use the css to determine rng seed &amp; calculate distance of rng based events
 
 # allstar
 most folks here are interested in all-star mode rng.
+
 the allstar command `ALLSTAR` in manip.cfg takes 24 paramaters, each is a bitmask determining which characters are allowed in each slot of a run. 
+
 you'll usually do singles, doubles leaders, and trips leaders having masks, and allowing all chars on the rest. 
 
+
 ssbm resets the run list to be in the order below (swapping ganon and gnw)
+
 so the program inits its list to it as well. when you restart the program, you have to restart your console and vice versa
 
-choose `y` when starting the program to find your seed by selecting random chars on the vs select screen
-choose the config option for allstar
-let it run (may take a long time (0-5 minutes) depending on how strict your config is)
-open a cpu window for how long it says
-close it and then choose `l` to continue from the last seed it detected you were at.
-if you waited longer than 5 seconds or so, do 5 characters, otherwise 4 if less
-continue this process until you are a few hundred iterations away.
-random characters on the CSS to advance your rng two iterations, random a tag to advance it once. 
-go into and out of allstar X times 
-advance the rng by `delay` amount of times.
+1. choose `y` when starting the program to find your seed by selecting random chars on the vs select screen
+2. choose the config option for allstar
+3. let it run (may take a long time (0-5 minutes) depending on how strict your config is)
+4. open a cpu window for how long it says
+5. close it and then choose `l` to continue from the last seed it detected you were at.
+6. if you waited longer than 5 seconds or so, do 5 characters, otherwise 4 if less
+7. continue this process until you are a few hundred iterations away.
+8. random characters on the CSS to advance your rng two iterations, random a tag to advance it once. 
+9. go into and out of allstar X times 
+10. advance the rng by `delay` amount of times.
 
 go into allstar and there u go. 
 
