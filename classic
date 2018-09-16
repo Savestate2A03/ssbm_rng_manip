@@ -1,0 +1,210 @@
+single
+team 2v2
+btt
+single
+3 v 1 giant
+bonus stage
+single
+team x
+rttf
+metal x
+master hand
+
+086 [056]   // Princess Peach's Castle (vs Mario)
+087 [057]   // Rainbow Cruise (vs Mario)
+088 [058]   // Kongo Jungle (vs Donkey Kong)
+089 [059]   // Jungle Japes  (vs Donkey Kong)
+090 [05A]   // Great Bay (vs Link)
+091 [05B]   // Temple (vs Link)
+092 [05C]   // Brinstar (vs Samus)
+093 [05D]   // Brinstar Depths (vs Samus)
+094 [05E]   // Yoshi's Story (vs Yoshi)
+095 [05F]   // Yoshi's Island (vs Yoshi)
+096 [060]   // Fountain of Dreams (vs Kirby)
+097 [061]   // Green Greens (vs Kirby)
+098 [062]   // Corneria (vs Fox)
+099 [063]   // Venom (vs Fox)
+100 [064]   // Pokémon Stadium (Only Pokeballs)(vs Pikachu)
+101 [065]   // Mushroom Kingdom I (vs Luigi)
+102 [066]   // Mushroom Kingdom II (vs Luigi)
+103 [067]   // Mute City (vs Captain Falcon)
+104 [068]   // Big Blue (vs Captain Falcon)
+105 [069]   // Onett (vs Ness)
+106 [06A]   // Fourside (vs Ness)
+107 [06B]   // Pokémon Stadium (vs Jigglypuff)
+108 [06C]   // Princess Peach's Castle (vs Bowser)
+109 [06D]   // Battlefield (vs Bowser)
+110 [06E]   // Princess Peach's Castle (vs Peach)
+111 [06F]   // Mushroom Kingdom II (vs Peach)
+112 [070]   // Temple (vs Zelda)
+113 [071]   // Great Bay (vs Marth)
+114 [072]   // Final Destination (vs Mewtwo)
+115 [073]   // Pokémon Stadium (vs Mewtwo)
+116 [074]   // Icicle Mountain (vs Ice Climbers)
+117 [075]   // Icicle Mountain (vs Ice Climbers)
+118 [076]   // Mushroom Kingdom I (Dr. Mario Music) (vs Dr. Mario)
+119 [077]   // Great Bay (vs Young Link)
+120 [078]   // Temple (vs Young Link)
+121 [079]   // Corneria (vs Falco)
+122 [07A]   // Venom (vs Falco)
+123 [07B]   // Great Bay (Unused)
+124 [07C]   // Pokémon Stadium (Pichu)
+
+CLASSIC (VS TWO CHARACTERS)
+125 [07D]   // Battlefield (Plays Mario Theme) (vs Team Mario & Bowser)
+126 [07E]   // Mushroom Kingdom II (vs Team Mario & Peach)
+127 [07F]   // Kongo Jungle (vs Team DK & Fox)
+128 [080]   // Temple (vs Team Link & Zelda)
+129 [081]   // Great Bay (vs Team Link & Young Link)
+130 [082]   // Mushroom Kingdom I (vs Team Link & Luigi)
+131 [083]   // Great Bay (Saria's Song) (vs Team Marth & Link)
+132 [084]   // Big Blue (vs Team Samus & Captain Falcon)
+133 [085]   // Brinstar (vs Team Samus & Fox)
+134 [086]   // Yoshi's Story (vs Team Yoshi & Luigi)
+135 [087]   // Yoshi's Island (vs Team Yoshi & Ness)
+136 [088]   // Green Greens (vs Team Kirby & Pikachu)
+137 [089]   // Fountain of Dreams (vs Team Kirby & Pichu)
+138 [08A]   // Green Greens (vs Team Kirby & Jigglypuff)
+139 [08B]   // Icicle Mountain (vs Team Kirby & Ice Climbers)
+140 [08C]   // Corneria (vs Team Fox & Falco)
+141 [08D]   // Mute City (vs Team Fox & Captain Falcon)
+142 [08E]   // Pokémon Stadium (vs Team Pikachu & Pichu)
+143 [08F]   // Pokémon Stadium (vs Team Pikachu & Jigglypuff)
+144 [090]   // Mushroom Kingdom I (vs Team Luigi & Dr. Mario)
+145 [091]   // Onett (alt music) (vs Team Ness & Peach)
+146 [092]   // Fourside (vs Team Ness & Mewtwo)
+147 [093]   // Big Blue (mRider song) (vs Team Captain Falcon & Falco)
+148 [094]   // Battlefield (vs Team Bowser & Mewtwo)
+149 [095]   // Battlefield (vs Team Bowser & Peach)
+150 [096]   // Battlefield (vs Team Bowser & Zelda)
+151 [097]   // Temple (vs Team Peach & Zelda)
+152 [098]   // Great Bay (Saria's Song) (vs Team Zelda & Young Link)
+153 [099]   // Temple (Emblem) (vs Team Zelda & Marth)
+154 [09A]   // Great Bay (Unused)
+
+CLASSIC (VS GIANT CHARACTER)
+155 [09B]   // Princess Peach's Castle (vs Giant Mario)
+156 [09C]   // Kongo Jungle (vs Giant DK)
+157 [09D]   // Great Bay (vs vs Giant Link)
+158 [09E]   // Yoshi's Story (vs Giant Yoshi)
+159 [09F]   // Mushroom Kingdom II (vs Giant Luigi)
+160 [0A0]   // Mute City (vs Giant Captain Falcon)
+161 [0A1]   // Pokémon Stadium (vs Giant Jigglypuff)
+162 [0A2]   // Fountain of Dreams (vs Giant Bowser)
+163 [0A3]   // Mushroom Kingdom I (vs Giant Dr. Mario)
+164 [0A4]   // Temple (vs Giant Young Link)
+
+CLASSIC (VS TEAM CHARACTER)
+165 [0A5]   // Rainbow Cruise (vs Team Mario)
+166 [0A6]   // Jungle Japes (vs Team Donkey Kong)
+167 [0A7]   // Fountain of Dreams (vs Team Kirby)
+168 [0A8]   // Mushroom Kingdom II (vs Team Luigi)
+169 [0A9]   // Onett (vs Team Ness)
+170 [0AA]   // Pokémon Stadium (vs Team Jigglypuff)
+171 [0AB]   // Icicle Mountain (Unused)
+172 [0AC]   // Pokémon Stadium (vs Team Pichu)
+173 [0AD]   // Flat Zone (vs Team Game & Watch)
+174 [0AE]   // Mute City (vs Team Captain Falcon)
+
+CLASSIC FINAL
+175 [0AF]   // Battlefield (No items) (vs Metal Character)
+176 [0B0]   // Final Destination (No items) (vs Master Hand)
+
+@803ddec8 TABLE A
+16 bytes per item
+0: index of sort
+1-11: ???
+12-15: ???
+
+classic init
+store on stack r0, sp, r27-(31?)
+put 803ddc58 in r31
+put 80490880 in r30 ? table
+put 803ddec8 in r4
+zero out r3
+
+branch to [branch] below
+
+(ZEROS OUT LAST WORD FROM TABLE A)
+[branch-pre]
+load @r4+12 -> r3
+increase r4 (pointer to TABLE A) +16 (size of struct?)
+[branch]
+load @r4 -> r0 .. (0)
+compare r0 to 13
+branch if not equal to 13 [branch-pre]
+-----
+
+@803de178 TABLE B
+6 bytes per item
+0-1: id ??
+2-5: ??
+
+put 803de178 (TABLE B) into r3
+zero out r29 (counter)
+
+branch to [branch] below
+
+(FIND INDEX OF ITEM w/ ID 328 (0x148) in TABLE B)
+
+[pre-branch]
+next index in table -> r3
+increment r29 (counter)
+[branch] load halfword @r3 -> r0
+compare r0 to 328 
+branch to [pre-branch] if not 328
+
+compare counter (r29) to zero
+zero out r6 (?)
+801b2fe0
+branch if counter (r29) less than or equal to zero [TBD]
+
+compare counter (r29) to 8
+subtract 8 from counter (r29) -> r3
+801b2fec
+branch if prev val. of counter (r29) was less than or equal to 8 [TBD]
+
+add 7 to r3 -> r0
+rotate r0 left 29 times (overflows), mask with 0xfffffff8 (actually 0x‭1FFFFFFF‬)
+compare r3 to 0
+move r0 to CTR
+r30 + 128 -> r7 (offset of 128 bytes of TABLE C)
+
+@80490880 BLOCK C ??
+0-127: ???
+‭80490900‬ 128- ?: stuff below ?? a table ??
+
+801b3004 branch if r3 value from earlier is less than or equal to 0, branch to [TBD]
+store r6 -> r7[0] (index of BLOCK C)
+add 1 to r6 -> r0
+add 2 to r6 -> r3
+store byte r0 -> r7[1]
+add 3 to r6 -> r0
+add 4 to r6 -> r5
+store byte r3 -> r7[2]
+add 5 to r6 -> r4
+add 6 to r6 -> r3
+store byte r0 -> r7[3]
+add 7 to r6 -> r0
+add 8 to r6 -> r6
+store byte r5 -> r7[4]
+store byte r4 -> r7[5]
+store byte r3 -> r7[6]
+store byte r0 -> r7[7]
+add 8 to r7 -> r7
+branch if CTR != 0 [TBD]
+branch to [somewhere]
+[init-inc-branch]
+subtract r6 (frt 8) from r29 (frt 9 (large scope?)) -> r0
+compare r6 (increments in 8s above) to r29 (something to do with 8 or 9?? large scope)
+move r0 into CTR
+801b3060 branch if r6 was greater or equal to r29
+store r6 -> r3 (now next 8 of above block of code)
+add r3 + 1 -> r3
+add r6 + 1 -> r6
+SAVE POINT 801b3070 decrement CTR, branch if not zero [TBD]
+
+801b3474 [somewhere]
+add r30 + r6 (8 from prev setting of val??) -> r3
+add 128 to r3 -> r3 (now at next 8 of the code block above)
+branch to [init-inc-branch]
