@@ -1,6 +1,8 @@
 # ssbm_rng_manip
 use the css to determine rng seed &amp; calculate distance of rng based events
 
+a download can be found in the [releases](https://github.com/Savestate2A03/ssbm_rng_manip/releases)
+
 # allstar
 most folks here are interested in all-star mode rng.
 
