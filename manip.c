@@ -301,7 +301,8 @@ uint32_t seed_find(int quick, uint32_t prev_seed) {
 typedef enum {
     DELAY,
     RAND_INT,
-    ALLSTAR
+    ALLSTAR,
+    MULTI
 } CFG_CMD;
 
 typedef struct {
@@ -445,6 +446,8 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
                 case DELAY:
                     rng_cmd_delay(&seed, c->params[0]);
                     break;
+                case MULTI:
+                    seed = base_seed;
                 case RAND_INT:
                     failed = rng_cmd_int(&seed, c->params[0], c->params[1], c->params[2]);
                     break;
@@ -479,7 +482,14 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
                 printf("reroll count: %d\n", reroll);
                 printf("delay count: %d\n", delay);
             }
-            printf("open cpu window for %.2f seconds\n", ((float)i/4833.9));
+            float seconds = ((float)i/4833.9);
+            if (seconds >= 60.0) {
+                uint32_t minutes;
+                for (minutes=0; seconds>=60.0; minutes++) { seconds-= 60.0; }
+                printf("open 2 windows on the vs css for %d mins, %.2f seconds\n", minutes, seconds);
+            } else {
+                printf("open 2 windows on the vs css for %.2f seconds\n", seconds);
+            }
             break;
         }
         rng_adv(&base_seed);
@@ -539,7 +549,7 @@ int rng_event_search(uint32_t seed, int quick) {
             current_entry++;
             sscanf(line, "NAME %[^\n]", params);
             strcpy(db.entries[current_entry].name, params);
-        }
+        } else
         if (strcmp("DELAY", command) == 0){
             uint32_t delay = 0;
             sscanf(line, "DELAY %u", &delay);
@@ -547,7 +557,7 @@ int rng_event_search(uint32_t seed, int quick) {
             ConfigCommand *c = &e->commands[e->size++];
             c->command = DELAY;
             c->params[0] = delay;
-        }
+        } else 
         if (strcmp("INT", command) == 0) {
             uint32_t range; 
             uint32_t lower_bound; // inclusive
@@ -560,7 +570,7 @@ int rng_event_search(uint32_t seed, int quick) {
             c->params[0] = range;
             c->params[1] = lower_bound;
             c->params[2] = upper_bound;
-        }
+        } else 
         if (strcmp("ALLSTAR", command) == 0) {
             uint32_t bitmasks[24];
             sscanf(line, "ALLSTAR %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u",
@@ -575,6 +585,11 @@ int rng_event_search(uint32_t seed, int quick) {
             for (int i=0; i<24; i++) { 
                 c->params[i] = bitmasks[i]; 
             }
+        } else
+        if (strcmp("MULTI", command) == 0) { 
+            ConfigEntry *e = &db.entries[current_entry];
+            ConfigCommand *c = &e->commands[e->size++];
+            c->command = MULTI;
         }
     }
     fclose(fp);
