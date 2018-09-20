@@ -205,7 +205,20 @@ uint32_t seed_find(int quick, uint32_t prev_seed) {
 
     // display characters
 
-    printf("allowed inputs: \n  ");
+    printf("------------------------------------------------\n");
+    printf(" Enter the order of random characters rolled\n");
+    printf(" on the Character Select Screen.\n");
+    printf(" Enter the number of characters below depending on\n");
+    printf(" how many approximate RNG advancements there's been\n");
+    printf(" since the last check.\n");
+    printf("------------------------------------------------\n");
+    printf(" 9 | >250k or New Search\n");
+    printf(" 6 | 10k-250k\n");
+    printf(" 5 | 400-10k\n");
+    printf(" 4 | <400\n");
+    printf("------------------------------------------------\n");
+    printf("Type in anything that isn't a valid character to\n");
+    printf("finish typing in your list. ( ex: \"fj8s4oije\" )\n\n");
     for (i=0; i<CHARACTERS_NUM; i++) {
         printf("%s%s", CHARACTERS[i], (i<CHARACTERS_NUM-1) ? ", " : "\n");
         if (!((i+1) % 5) && i<CHARACTERS_NUM-1) printf("\n  ");
@@ -256,7 +269,7 @@ uint32_t seed_find(int quick, uint32_t prev_seed) {
             if (match.match) {
                 insertMatchArray(&matches, match);
                 if (quick) {
-                    printf("Scanning: 0x%08X -> 0x%08X ... %u matches%s\n", 
+                    printf("Scanning: (%u) -> 0x%08X ... %u matches%s\n", 
                         i, seed, matches.used, (matches.used > 0) ? "!" : ".");
                     freeMatchArray(&matches);
                     freeArray(&characters);
@@ -265,7 +278,7 @@ uint32_t seed_find(int quick, uint32_t prev_seed) {
             }
         }
         if (!(i % 0x1234517))
-            printf("Scanning: 0x%08X -> 0x%08X ... %u matches%s\r", 
+            printf("Scanning: (%u) -> 0x%08X ... %u matches%s\r", 
                 i, seed, matches.used, (matches.used > 0) ? "!" : ".");
         prev_seed = seed;
         rng_adv(&seed);
@@ -273,7 +286,7 @@ uint32_t seed_find(int quick, uint32_t prev_seed) {
 
     // printing results
 
-    printf("Scanning: 0x%08X -> 0x%08X ... %u matches%s\n", 
+    printf("Scanning: (%u) -> 0x%08X ... %u matches%s\n", 
         i, seed, matches.used, (matches.used > 0) ? "!" : ".");
 
     printf("List of matches:\n");
@@ -486,9 +499,9 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
             if (seconds >= 60.0) {
                 uint32_t minutes;
                 for (minutes=0; seconds>=60.0; minutes++) { seconds-= 60.0; }
-                printf("open 2 windows on the vs css for %d mins, %.2f seconds\n", minutes, seconds);
+                printf("Open two character windows for %d mins, %.2f seconds\n", minutes, seconds);
             } else {
-                printf("open 2 windows on the vs css for %.2f seconds\n", seconds);
+                printf("Open two character windows for %.2f seconds\n", seconds);
             }
             break;
         }
@@ -610,16 +623,19 @@ int rng_event_search(uint32_t seed, int quick) {
     printf("Use which entry? (1-%d) -> ", db.size);
     scanf("%u", &entry_num);
     entry = &db.entries[entry_num-1];
+
     if (!quick) {
         printf("Current seed? 0x");
         scanf("%08x", &seed);
     }
 
+    uint32_t last_seed = seed;
+
     printf("Using entry \"%s\" on seed 0x%08X...\n", entry->name, seed);
 
     calculate_rng_distance(entry, seed);
 
-    return 0;
+    return last_seed;
 }
 
 // begin
@@ -641,20 +657,35 @@ int main() {
         if (first_run != 0) {
             printf("Last seed: 0x%08x\n", last_seed);
         }
-        printf("Locate seed? [y]es / [n]o / [l]ast / e[x]it -> ");
+        printf("Locate seed? [y]es / [n]o / [l]ast / e[x]it\n");
+        printf("  y    Start New Search\n");
+        printf("  n    Manually enter in an RNG seed\n");
+        printf("  l    Continue search from last seed detected\n");
+        printf("  x    Exit the program\n");
+        printf(" -> ");
         scanf("%c", &answer);
         uint32_t seed;
         int quick = 1;
+        int valid = 0;
         if (answer == 'x' || answer == 'X') { break; }
         if (answer == 'y' || answer == 'Y') {
+            valid = 1;
             seed = seed_find(quick, 0x00000001);
-            last_seed = seed;
         }
         if (answer == 'l' || answer == 'L') {
+            valid = 1;
             seed = seed_find(quick, last_seed);
-            last_seed = seed;
         }
-        rng_event_search(seed, quick);
+        if (answer == 'n' || answer == 'N') {
+            valid = 1;
+            quick = 0;
+        }
+        if (!valid) { 
+            printf(" !! Invalid entry detected !!\n");
+            printf("Only valid inputs: y/n/l/x\n");
+            continue; 
+        }
+        last_seed = rng_event_search(seed, quick);
         first_run = 1;
     }
 }
