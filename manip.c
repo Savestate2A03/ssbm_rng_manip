@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>
+#include <ctype.h>
 
 #define CHAR_SIZE 255
 #define CHARACTERS_NUM 25
@@ -74,6 +75,26 @@ void freeMatchArray(MatchArray *a) {
     a->used = a->size = 0;
 }
 
+// https://stackoverflow.com/questions/122616/how-do-i-trim-leading-trailing-whitespace-in-a-standard-way
+char* trimwhitespace(char* str)
+{
+  char* end;
+
+  // Trim leading space
+  while(isspace((unsigned char)*str)) str++;
+
+  if(*str == 0)  // All spaces?
+    return str;
+
+  // Trim trailing space
+  end = str + strlen(str) - 1;
+  while(end > str && isspace((unsigned char)*end)) end--;
+
+  // Write new null terminator character
+  end[1] = '\0';
+
+  return str;
+}
 
 // ----------------------------------------------------------------------
 
@@ -104,6 +125,35 @@ static const char* ALLSTAR_EVENT_STRINGS[25] = {
     "Final Destination (Emblem Music) (vs Roy)",
     "Flat Zone (vs Team Game & Watch)",
     "Brinstar Depths (vs Ganondorf)" // 0xC9
+};
+
+static const char* CHARACTERS_EXTERNAL_ID[26] = {
+    "Falcon",
+    "DK",
+    "Fox",
+    "GnW",
+    "Kirby",
+    "Bowser",
+    "Link",
+    "Luigi",
+    "Mario",
+    "Marth",
+    "Mewtwo",
+    "Ness",
+    "Peach",
+    "Pikachu",
+    "ICs",
+    "Jigglypuff",
+    "Samus",
+    "Yoshi",
+    "Zelda",
+    "Sheik",
+    "Falco",
+    "YLink",
+    "Doc",
+    "Roy",
+    "Pichu",
+    "Ganondorf"
 };
 
 static const char* CHARACTERS[CHARACTERS_NUM] = {
@@ -150,6 +200,16 @@ static uint8_t ALLSTAR_TABLE_TEMP[24] = {
     0xC5, 0xC6, 0xC7, 0xC9 //, 0xC8 (never changes spot) 
 };
 
+void init_pick3_arrays(Array* from, Array* picked, int player_external_id) {
+    initArray(from, 24);
+    initArray(picked, 4);
+    for (int i=0; i<26; i++) {
+        if (i == player_external_id) continue;
+        if (i == 0x13) continue; // sheik
+        insertArray(from, i);
+    }
+}
+
 int reverse_character_lookup(char *s) {
     int i;
     for (i=0; i<CHARACTERS_NUM; i++) {
@@ -160,10 +220,28 @@ int reverse_character_lookup(char *s) {
 }
 
 void character_lookup(char *s, size_t size, uint32_t character){
-    char *char_string;
     if (character >= CHARACTERS_NUM)
         strncpy(s, "unknown", size-1);
     else strncpy(s, CHARACTERS[character], size-1);
+    s[size-1] = '\0';
+}
+
+int reverse_external_id_character_lookup(char *s) {
+    int i;
+    char character_iteration_name[50];
+    for (i=0; i<26; i++) {
+        strncpy(character_iteration_name, CHARACTERS_EXTERNAL_ID[i], 50-1);
+        char *lowercase_character = strlwr(s);
+        int cmp = strcmp(strlwr(character_iteration_name), s);
+        if (!cmp) return i;
+    }
+    return -1;
+}
+
+void external_id_character_lookup(char *s, size_t size, uint32_t character){
+    if (character >= 26)
+        strncpy(s, "unknown", size-1);
+    else strncpy(s, CHARACTERS_EXTERNAL_ID[character], size-1);
     s[size-1] = '\0';
 }
 
@@ -315,7 +393,8 @@ typedef enum {
     DELAY,
     RAND_INT,
     ALLSTAR,
-    MULTI
+    MULTI,
+    PICK3
 } CFG_CMD;
 
 typedef struct {
@@ -455,12 +534,15 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
             uint32_t temp_seed;
             uint32_t pre_delay_seed;
             uint8_t backup_allstar_table[24];
+            Array *char_list_pick_from = (Array *)malloc(sizeof(Array));
+            Array *char_list_picked = (Array *)malloc(sizeof(Array));
             switch(c->command) {
                 case DELAY:
                     rng_cmd_delay(&seed, c->params[0]);
                     break;
                 case MULTI:
                     seed = base_seed;
+                    break;
                 case RAND_INT:
                     failed = rng_cmd_int(&seed, c->params[0], c->params[1], c->params[2]);
                     break;
@@ -484,9 +566,36 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
                     }
                     was_allstar = 1;
                     break;
+                case PICK3:
+                    init_pick3_arrays(char_list_pick_from, char_list_picked, c->params[0]);
+                    for (int p=0; p<3; p++) {
+                        int pick_size = char_list_pick_from->used - char_list_picked->used;
+                        rng_adv(&seed);
+                        uint32_t pull_from = rng_int(&seed, pick_size);
+                        uint32_t pick3_index = 0;
+                        for (int q=0; q<char_list_pick_from->used; q++) {
+                            if (char_list_pick_from->array[q] == -1) {
+                                continue;
+                            }
+                            if (pick3_index == pull_from) {
+                                insertArray(char_list_picked, char_list_pick_from->array[q]);
+                                char_list_pick_from->array[q] = -1;
+                                break;
+                            }
+                            pick3_index++;
+                        }
+                    }
+                    if (c->params[1] != char_list_picked->array[0]) failed = 1;
+                    if (c->params[2] != char_list_picked->array[1]) failed = 1;
+                    if (c->params[3] != char_list_picked->array[2]) failed = 1;
+                    break;
                 default:
                     break;
             }
+            freeArray(char_list_pick_from);
+            freeArray(char_list_picked);
+            free(char_list_pick_from);
+            free(char_list_picked);
             if (failed) break;
         }
         if (!failed) {
@@ -603,6 +712,22 @@ int rng_event_search(uint32_t seed, int quick) {
             ConfigEntry *e = &db.entries[current_entry];
             ConfigCommand *c = &e->commands[e->size++];
             c->command = MULTI;
+        } else 
+        if (strcmp("PICK3", command) == 0) {
+            char player[30], pick1[30], pick2[30], pick3[30];
+            sscanf(line, "PICK3 %s%s%s%s",
+                    player, pick1, pick2, pick3);
+            trimwhitespace(player);
+            trimwhitespace(pick1);
+            trimwhitespace(pick2);
+            trimwhitespace(pick3);
+            ConfigEntry *e = &db.entries[current_entry];
+            ConfigCommand *c = &e->commands[e->size++];
+            c->command = PICK3;
+            c->params[0] = reverse_external_id_character_lookup(player);
+            c->params[1] = reverse_external_id_character_lookup(pick1);
+            c->params[2] = reverse_external_id_character_lookup(pick2);
+            c->params[3] = reverse_external_id_character_lookup(pick3);
         }
     }
     fclose(fp);
