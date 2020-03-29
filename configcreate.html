@@ -1,0 +1,71 @@
+<html>
+<head>
+    <title>Config File Helper</title>
+    <script
+              src="https://code.jquery.com/jquery-3.3.1.min.js"
+              integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+              crossorigin="anonymous"></script>
+    <script>
+        var list = [ 
+            "Rainbow Cruise (vs <strong>Mario</strong>)",
+            "Kongo Jungle (vs <strong>Donkey Kong</strong>)",
+            "Great Bay (vs <strong>Link</strong>)",
+            "Brinstar (vs <strong>Samus</strong>)",
+            "Yoshi's Story (vs <strong>Yoshi</strong>)",
+            "Green Greens (vs <strong>Kirby</strong>)",
+            "Corneria (vs <strong>Fox</strong>)",
+            "Pokémon Stadium (vs <strong>Pikachu</strong>)",
+            "Mushroom Kingdom I (vs <strong>Luigi</strong>)",
+            "Mute City (vs <strong>Captain Falcon</strong>)",
+            "Onett (vs <strong>Ness</strong>)",
+            "Poké Floats (vs <strong>Jigglypuff</strong>)",
+            "Icicle Mountain (vs <strong>Ice Climbers</strong>)",
+            "Princess Peach's Castle (vs <strong>Peach</strong>)",
+            "Temple (vs <strong>Zelda</strong>)",
+            "Fountain of Dreams (Emblem Music) (vs <strong>Marth</strong>)",
+            "Battlefield (Poké Floats song) (vs <strong>Mewtwo</strong>)",
+            "Yoshi's Island (vs <strong>Bowser</strong>)",
+            "Mushroom Kingdom II (Dr Mario Music) (vs <strong>Dr Mario</strong>)",
+            "Jungle Japes (vs Young <strong>Link</strong>)",
+            "Venom (vs <strong>Falco</strong>)",
+            "Fourside (vs <strong>Pichu</strong>)",
+            "Final Destination (Emblem Music) (vs <strong>Roy</strong>)",
+            "Flat Zone (vs Team <strong>Game & Watch</strong>)",
+            "Brinstar Depths (vs <strong>Ganondorf</strong>)"
+        ];
+        $( document ).ready(() => {
+            $.each(list, (index, character) => {
+                var checkbox = $("<input>").attr({
+                    type: 'checkbox',
+                    value: index,
+                    id: 'char' + index
+                });
+                checkbox.change(update_value);
+                checkbox.appendTo('#chars');
+                var text = $("<span>").text('test');
+                $('#char' + index).after("<br>").after(character);
+            });
+        });
+        function update_value() {
+            var value = 0;
+            for(var i=0; i<list.length; i++) {
+                if ($('#char' + i).is(':checked')) {
+                    value += Math.pow(2, i);
+                }
+            }
+            $('#value').text(value);
+        }
+    </script>
+    <style>
+    body {
+        font-family: verdana;
+    }
+    </style>
+</head>
+<body>
+    <h1>choose your characters</h1>
+    <div id="chars">
+    </div>
+    <p>value: <span id="value">...</span></p>
+</body>
+</html>

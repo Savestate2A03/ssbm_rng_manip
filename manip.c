@@ -200,7 +200,20 @@ static uint8_t ALLSTAR_TABLE_TEMP[24] = {
     0xC5, 0xC6, 0xC7, 0xC9 //, 0xC8 (never changes spot) 
 };
 
-void init_pick3_arrays(Array* from, Array* picked, int player_external_id) {
+void init_tt_arrays(Array* from, Array* picked, int player_external_id) {
+    // 
+    static int tt_characters[] = 
+            {0x00, 0x01, 0x02, 0x04, 0x05, 0x06, 0x08,
+            0x0b, 0x0c, 0x0d, 0x0e, 0x10, 0x11, 0x12};
+    initArray(from, 14);
+    initArray(picked, 4);
+    for (int i=0; i<14; i++) {
+        if (tt_characters[i] != player_external_id)
+            insertArray(from, tt_characters[i]);
+    }
+}
+
+void init_tt3_arrays(Array* from, Array* picked, int player_external_id) {
     initArray(from, 24);
     initArray(picked, 4);
     for (int i=0; i<26; i++) {
@@ -394,7 +407,8 @@ typedef enum {
     RAND_INT,
     ALLSTAR,
     MULTI,
-    PICK3
+    TT,
+    TT3
 } CFG_CMD;
 
 typedef struct {
@@ -566,23 +580,46 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
                     }
                     was_allstar = 1;
                     break;
-                case PICK3:
-                    init_pick3_arrays(char_list_pick_from, char_list_picked, c->params[0]);
+                case TT:
+                    init_tt_arrays(char_list_pick_from, char_list_picked, c->params[0]);
                     for (int p=0; p<3; p++) {
                         int pick_size = char_list_pick_from->used - char_list_picked->used;
                         rng_adv(&seed);
                         uint32_t pull_from = rng_int(&seed, pick_size);
-                        uint32_t pick3_index = 0;
+                        uint32_t tt_index = 0;
                         for (int q=0; q<char_list_pick_from->used; q++) {
                             if (char_list_pick_from->array[q] == -1) {
                                 continue;
                             }
-                            if (pick3_index == pull_from) {
+                            if (tt_index == pull_from) {
                                 insertArray(char_list_picked, char_list_pick_from->array[q]);
                                 char_list_pick_from->array[q] = -1;
                                 break;
                             }
-                            pick3_index++;
+                            tt_index++;
+                        }
+                    }
+                    if (c->params[1] != char_list_picked->array[0]) failed = 1;
+                    if (c->params[2] != char_list_picked->array[1]) failed = 1;
+                    if (c->params[3] != char_list_picked->array[2]) failed = 1;
+                    break;
+                case TT3:
+                    init_tt3_arrays(char_list_pick_from, char_list_picked, c->params[0]);
+                    for (int p=0; p<3; p++) {
+                        int pick_size = char_list_pick_from->used - char_list_picked->used;
+                        rng_adv(&seed);
+                        uint32_t pull_from = rng_int(&seed, pick_size);
+                        uint32_t tt3_index = 0;
+                        for (int q=0; q<char_list_pick_from->used; q++) {
+                            if (char_list_pick_from->array[q] == -1) {
+                                continue;
+                            }
+                            if (tt3_index == pull_from) {
+                                insertArray(char_list_picked, char_list_pick_from->array[q]);
+                                char_list_pick_from->array[q] = -1;
+                                break;
+                            }
+                            tt3_index++;
                         }
                     }
                     if (c->params[1] != char_list_picked->array[0]) failed = 1;
@@ -713,9 +750,9 @@ int rng_event_search(uint32_t seed, int quick) {
             ConfigCommand *c = &e->commands[e->size++];
             c->command = MULTI;
         } else 
-        if (strcmp("PICK3", command) == 0) {
+        if (strcmp("TT", command) == 0) {
             char player[30], pick1[30], pick2[30], pick3[30];
-            sscanf(line, "PICK3 %s%s%s%s",
+            sscanf(line, "TT %s%s%s%s",
                     player, pick1, pick2, pick3);
             trimwhitespace(player);
             trimwhitespace(pick1);
@@ -723,7 +760,23 @@ int rng_event_search(uint32_t seed, int quick) {
             trimwhitespace(pick3);
             ConfigEntry *e = &db.entries[current_entry];
             ConfigCommand *c = &e->commands[e->size++];
-            c->command = PICK3;
+            c->command = TT;
+            c->params[0] = reverse_external_id_character_lookup(player);
+            c->params[1] = reverse_external_id_character_lookup(pick1);
+            c->params[2] = reverse_external_id_character_lookup(pick2);
+            c->params[3] = reverse_external_id_character_lookup(pick3);
+        } else 
+        if (strcmp("TT3", command) == 0) {
+            char player[30], pick1[30], pick2[30], pick3[30];
+            sscanf(line, "TT3 %s%s%s%s",
+                    player, pick1, pick2, pick3);
+            trimwhitespace(player);
+            trimwhitespace(pick1);
+            trimwhitespace(pick2);
+            trimwhitespace(pick3);
+            ConfigEntry *e = &db.entries[current_entry];
+            ConfigCommand *c = &e->commands[e->size++];
+            c->command = TT3;
             c->params[0] = reverse_external_id_character_lookup(player);
             c->params[1] = reverse_external_id_character_lookup(pick1);
             c->params[2] = reverse_external_id_character_lookup(pick2);
