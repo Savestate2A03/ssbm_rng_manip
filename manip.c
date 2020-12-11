@@ -602,6 +602,10 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
                     if (c->params[1] != char_list_picked->array[0]) failed = 1;
                     if (c->params[2] != char_list_picked->array[1]) failed = 1;
                     if (c->params[3] != char_list_picked->array[2]) failed = 1;
+                    freeArray(char_list_pick_from);
+                    freeArray(char_list_picked);
+                    free(char_list_pick_from);
+                    free(char_list_picked);
                     break;
                 case TT3:
                     init_tt3_arrays(char_list_pick_from, char_list_picked, c->params[0]);
@@ -625,14 +629,14 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
                     if (c->params[1] != char_list_picked->array[0]) failed = 1;
                     if (c->params[2] != char_list_picked->array[1]) failed = 1;
                     if (c->params[3] != char_list_picked->array[2]) failed = 1;
+                    freeArray(char_list_pick_from);
+                    freeArray(char_list_picked);
+                    free(char_list_pick_from);
+                    free(char_list_picked);
                     break;
                 default:
                     break;
             }
-            freeArray(char_list_pick_from);
-            freeArray(char_list_picked);
-            free(char_list_pick_from);
-            free(char_list_picked);
             if (failed) break;
         }
         if (!failed) {
@@ -703,12 +707,13 @@ int rng_event_search(uint32_t seed, int quick) {
     while(fgets(line, 1024, fp) != NULL) {
         char command[16];
         char params[256];
-        sscanf(line, "%s", command);
+        if (sscanf(line, "%s", command) < 0) continue;
         if (strcmp("NAME", command) == 0){
             current_entry++;
             sscanf(line, "NAME %[^\n]", params);
             strcpy(db.entries[current_entry].name, params);
-        } else
+            continue;
+        }
         if (strcmp("DELAY", command) == 0){
             uint32_t delay = 0;
             sscanf(line, "DELAY %u", &delay);
@@ -716,7 +721,8 @@ int rng_event_search(uint32_t seed, int quick) {
             ConfigCommand *c = &e->commands[e->size++];
             c->command = DELAY;
             c->params[0] = delay;
-        } else 
+            continue;
+        }
         if (strcmp("INT", command) == 0) {
             uint32_t range; 
             uint32_t lower_bound; // inclusive
@@ -729,7 +735,8 @@ int rng_event_search(uint32_t seed, int quick) {
             c->params[0] = range;
             c->params[1] = lower_bound;
             c->params[2] = upper_bound;
-        } else 
+            continue;
+        }
         if (strcmp("ALLSTAR", command) == 0) {
             uint32_t bitmasks[24];
             sscanf(line, "ALLSTAR %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u",
@@ -744,12 +751,14 @@ int rng_event_search(uint32_t seed, int quick) {
             for (int i=0; i<24; i++) { 
                 c->params[i] = bitmasks[i]; 
             }
-        } else
+            continue;
+        }
         if (strcmp("MULTI", command) == 0) { 
             ConfigEntry *e = &db.entries[current_entry];
             ConfigCommand *c = &e->commands[e->size++];
             c->command = MULTI;
-        } else 
+            continue;
+        }
         if (strcmp("TT", command) == 0) {
             char player[30], pick1[30], pick2[30], pick3[30];
             sscanf(line, "TT %s%s%s%s",
@@ -765,7 +774,8 @@ int rng_event_search(uint32_t seed, int quick) {
             c->params[1] = reverse_external_id_character_lookup(pick1);
             c->params[2] = reverse_external_id_character_lookup(pick2);
             c->params[3] = reverse_external_id_character_lookup(pick3);
-        } else 
+            continue;
+        }
         if (strcmp("TT3", command) == 0) {
             char player[30], pick1[30], pick2[30], pick3[30];
             sscanf(line, "TT3 %s%s%s%s",
@@ -781,6 +791,7 @@ int rng_event_search(uint32_t seed, int quick) {
             c->params[1] = reverse_external_id_character_lookup(pick1);
             c->params[2] = reverse_external_id_character_lookup(pick2);
             c->params[3] = reverse_external_id_character_lookup(pick3);
+            continue;
         }
     }
     fclose(fp);
