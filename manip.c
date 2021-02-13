@@ -408,7 +408,8 @@ typedef enum {
     ALLSTAR,
     MULTI,
     TT,
-    TT3
+    TT3,
+    SEED
 } CFG_CMD;
 
 typedef struct {
@@ -634,6 +635,9 @@ void calculate_rng_distance(ConfigEntry *e, uint32_t base_seed) {
                     free(char_list_pick_from);
                     free(char_list_picked);
                     break;
+	            case SEED:
+	                if (!(seed == c->params[0])) failed = 1;
+               		break;
                 default:
                     break;
             }
@@ -708,12 +712,14 @@ int rng_event_search(uint32_t seed, int quick) {
         char command[16];
         char params[256];
         if (sscanf(line, "%s", command) < 0) continue;
+
         if (strcmp("NAME", command) == 0){
             current_entry++;
             sscanf(line, "NAME %[^\n]", params);
             strcpy(db.entries[current_entry].name, params);
             continue;
         }
+
         if (strcmp("DELAY", command) == 0){
             uint32_t delay = 0;
             sscanf(line, "DELAY %u", &delay);
@@ -723,6 +729,7 @@ int rng_event_search(uint32_t seed, int quick) {
             c->params[0] = delay;
             continue;
         }
+
         if (strcmp("INT", command) == 0) {
             uint32_t range; 
             uint32_t lower_bound; // inclusive
@@ -737,6 +744,7 @@ int rng_event_search(uint32_t seed, int quick) {
             c->params[2] = upper_bound;
             continue;
         }
+
         if (strcmp("ALLSTAR", command) == 0) {
             uint32_t bitmasks[24];
             sscanf(line, "ALLSTAR %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u %u",
@@ -753,12 +761,14 @@ int rng_event_search(uint32_t seed, int quick) {
             }
             continue;
         }
+
         if (strcmp("MULTI", command) == 0) { 
             ConfigEntry *e = &db.entries[current_entry];
             ConfigCommand *c = &e->commands[e->size++];
             c->command = MULTI;
             continue;
         }
+
         if (strcmp("TT", command) == 0) {
             char player[30], pick1[30], pick2[30], pick3[30];
             sscanf(line, "TT %s%s%s%s",
@@ -776,6 +786,7 @@ int rng_event_search(uint32_t seed, int quick) {
             c->params[3] = reverse_external_id_character_lookup(pick3);
             continue;
         }
+
         if (strcmp("TT3", command) == 0) {
             char player[30], pick1[30], pick2[30], pick3[30];
             sscanf(line, "TT3 %s%s%s%s",
@@ -791,6 +802,16 @@ int rng_event_search(uint32_t seed, int quick) {
             c->params[1] = reverse_external_id_character_lookup(pick1);
             c->params[2] = reverse_external_id_character_lookup(pick2);
             c->params[3] = reverse_external_id_character_lookup(pick3);
+            continue;
+        }
+
+        if (strcmp("SEED", command) == 0) {
+            uint32_t search_seed;
+            sscanf(line, "SEED %x", &search_seed);
+            ConfigEntry* e = &db.entries[current_entry];
+            ConfigCommand* c = &e->commands[e->size++];
+            c->command = SEED;
+            c->params[0] = search_seed;
             continue;
         }
     }
